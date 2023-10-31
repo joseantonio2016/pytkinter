@@ -1,0 +1,7 @@
+{
+  "nombre": "Ejemplo",
+  "edad": 30,
+  "activo": true,
+  "amigos": ["Amigo1", "Amigo2"]
+}
+
