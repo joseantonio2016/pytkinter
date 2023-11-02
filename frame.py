@@ -11,7 +11,13 @@ def guardar():
     # Lógica para la acción "Guardar"
     pass
 
-# Función para mostrar la ventana "About"
+def open_file():
+    archivo = filedialog.askopenfilename(filetypes=[("Archivos", "*.*")])
+    if archivo:
+        import visorfileln
+        visorfileln.show(root,archivo)
+
+# Función para mostrar la root "About"
 def show_about():
     messagebox.showinfo("About", "Esta es una aplicación de ejemplo con Tkinter")
 
@@ -63,25 +69,25 @@ def toggle_panel():
 def open_panel():
     paneLeft.pack(side="left", fill="both", expand=True)
     for i in range(0, 200, 5):  # Anima el panel desde 0 hasta su ancho deseado
-        ventana.after(i, paneLeft.lift)  # Aumenta la opacidad gradualmente
+        root.after(i, paneLeft.lift)  # Aumenta la opacidad gradualmente
 
 def close_panel():
     for i in range(195, -1, -5):  # Anima el panel desde su ancho hasta 0
-        ventana.after(200 - i, paneLeft.lower)  # Disminuye la opacidad gradualmente
-    ventana.after(200, paneLeft.pack_forget)  # Oculta el panel después de la animación
+        root.after(200 - i, paneLeft.lower)  # Disminuye la opacidad gradualmente
+    root.after(200, paneLeft.pack_forget)  # Oculta el panel después de la animación
 
 """ def toggle_panel():
     if paneLeft.winfo_viewable():
         paneLeft.pack_forget()
     else:
         paneLeft.pack(side="left", fill="both", expand=True) """
-# Crear la ventana principal
-ventana = tk.Tk()
-ventana.title("Mi Aplicación")
-ventana.geometry("600x500")
+# Crear la root principal
+root = tk.Tk()
+root.title("Mi Aplicación")
+root.geometry("600x500")
 
 # Menú Inicio
-menu_bar = Menu(ventana)
+menu_bar = Menu(root)
 # Menú "Inicio"
 inicio_menu = Menu(menu_bar, tearoff=0)
 inicio_menu.add_command(label="Archivo", command=None)  # Agrega un submenú "Archivo" que estará vacío
@@ -91,6 +97,7 @@ menu_bar.add_cascade(label="Inicio", menu=inicio_menu)
 # Submenú "Archivo"
 archivo_menu = Menu(inicio_menu, tearoff=0)
 archivo_menu.add_command(label="Nuevo", command=nuevo)
+archivo_menu.add_command(label="Abrir", command=open_file)
 archivo_menu.add_command(label="Guardar", command=guardar)
 inicio_menu.add_cascade(label="Archivo", menu=archivo_menu)
 
@@ -105,27 +112,27 @@ menu_bar.add_command(label="Configuración", command=None)
 
 
 menu_bar.add_command(label="About", command=show_about)
-ventana.config(menu=menu_bar)
+root.config(menu=menu_bar)
 
 # Crear un botón para ocultar/abrir el panel
-toggle_button = tk.Button(ventana, text="Ocultar/abrir panel", command=toggle_panel)
+toggle_button = tk.Button(root, text="Ocultar/abrir panel", command=toggle_panel)
 toggle_button.pack(side="top")
 # Dividir en la barra derecha e izquierda
-paneLeft = tk.Frame(ventana, width=150, bg="#3366FF")
+paneLeft = tk.Frame(root, width=150, bg="#3366FF")
 paneLeft.pack(side="left", fill="both", expand=True)
 # Coloca contenido en el panel
 label = tk.Label(paneLeft, text="Contenido del panel")
 label.pack(pady=20)
 
-barra_derecha = tk.Frame(ventana, bg="lightgray")
+barra_derecha = tk.Frame(root, bg="lightgray")
 barra_derecha.pack(side="right", fill="both", expand=True)
 
 # Fila de botones en la parte inferior
-fila_botones = tk.Frame(ventana, height=50, bg="lightblue")
+fila_botones = tk.Frame(root, height=50, bg="lightblue")
 fila_botones.pack(side="bottom", fill="x")
 
 # Centro con un botón, un input y un textarea
-centro = tk.Frame(ventana, bg="white")
+centro = tk.Frame(root, bg="white")
 centro.pack(expand=True, fill="both")
 
 boton_centro = tk.Button(centro, text="Botón en el centro",command=agregar_texto)
@@ -164,5 +171,5 @@ tree.pack()
 
 panel_opened = False
 
-ventana.mainloop()
+root.mainloop()
 

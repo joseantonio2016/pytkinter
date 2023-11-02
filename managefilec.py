@@ -1,78 +1,41 @@
 import tkinter as tk
 from tkinter import filedialog, font, messagebox, ttk
-from threading import Thread
-import os, json
-import visorfileln
+import os
 
-class LineaCode:
-    def __init__(self, check, num, text):
-        self.check_button = check
-        self.entry_num = num
-        self.entry_text = text
+class LineaManage:
+    def __init__(self, root, idx):
+        self.check = tk.BooleanVar()
+        self.content_num = tk.StringVar()
+        self.content_text = tk.StringVar()
+
+        self.check_button = tk.Checkbutton(root, variable=self.check)
+        self.entry_num = tk.Entry(root)
+        self.entry_text = tk.Entry(root)
 
     def grid(self, row):
         self.check_button.grid(row=row, column=0)
         self.entry_num.grid(row=row, column=1)
         self.entry_text.grid(row=row, column=2)
 
-def limpiar_frame():
-    for widget in frame.winfo_children():
-        widget.destroy()
-
 def reload_memory(lineas=[]):
-    list_wf_lineacode.clear()
     for i, linea in enumerate(lineas):
-        check_var.append(tk.IntVar(value=0))
-        show_var.append(tk.BooleanVar(value=True))
-        add_line = tk.Checkbutton(frame, variable=check_var[i])
-        #add_line.grid(row=i, column=0)
+            check_var.append(tk.IntVar(value=0))
+            add_line = tk.Checkbutton(frame, variable=check_var[i])
+            add_line.grid(row=i, column=0)
 
-        num_l = tk.Entry(frame, width=5)
-        num_l.insert(0, str(i + 1))
-        #num_l.grid(row=i, column=1)
+            num_l = tk.Entry(frame, width=5)
+            num_l.insert(0, str(i + 1))
+            num_l.grid(row=i, column=1)
 
-        line_text = tk.Entry(frame, width=60,bg="gray20", fg="white", font=("Courier", 9), bd=0)
-        line_text.insert(0, linea.strip())
-        #line_text.grid(row=i, column=2, sticky="ew")
+            line_text = tk.Entry(frame, width=60)
+            line_text.insert(0, linea.strip())
+            line_text.grid(row=i, column=2, sticky="ew")
 
-        check_var[i].set(0)
-        list_wf_lineacode.append(LineaCode(add_line,num_l,line_text))
-        #check_buttons.append(add_line)
-        #num_entries.append(num_l)
-        #text_entries.append(line_text)
-    render()
+            check_var[i].set(0)
+            check_buttons.append(add_line)
+            num_entries.append(num_l)
+            text_entries.append(line_text)
 
-def render(ignore=False):
-    if ignore:
-        counter = 0
-        for wf, show in zip(list_wf_lineacode,show_var):
-            if show.get() == True:
-                wf.grid(counter)
-                counter = counter + 1
-            if counter == 500:
-                messagebox.showwarning('Render Sesion','Maximo 500 filas')
-                return
-            
-    else:
-        if len(list_wf_lineacode) == 0:
-            messagebox.showwarning('Archivo','Seleccione un archivo')
-            return
-        for i, wf in enumerate(list_wf_lineacode):
-            if i == 500:
-                messagebox.showwarning('Render Inicial','Maximo 500 filas')
-                return
-            else:
-                wf.grid(i)
-
-def open_load_file(file):
-    try:
-        with open(file, "r") as file:
-                    lineas = file.readlines()
-                    reload_memory(lineas)
-    except:
-        messagebox.showerror('Archivo','No se pudo abrir')
-        return
-    
 def seleccionar_archivo():
     sizelim = 100 * 1024
     archivo = filedialog.askopenfilename()
@@ -83,7 +46,9 @@ def seleccionar_archivo():
             return
         ruta_archivo.set(archivo)
         et_target.insert(0, archivo)
-        open_load_file(ruta_archivo.get())
+        with open(archivo, "r") as file:
+            lineas = file.readlines()
+            reload_memory(lineas)
     else:
         messagebox.showwarning('Advertencia','Archivo no encontrado')
 
@@ -91,9 +56,9 @@ def command_replace_line():
     lines=[]
     try:
         with open(et_target.get(), "w") as file:
-            for i, lc in enumerate(list_wf_lineacode):
+            for i, check in enumerate(check_buttons):
                 if check_var[i].get() == 1:
-                    lines.append(lc.entry_text.get())
+                    lines.append(text_entries[i].get())
             file.writelines(line + '\n' for line in lines)
             messagebox.showinfo('Reemplazo completado','Se escribio en archivo destino')
     except FileNotFoundError:
@@ -105,20 +70,17 @@ def on_configure(event):
     canvas.configure(scrollregion=canvas.bbox("all"))
 
 
-def all_show():
-    for var in show_var:
-        var.set(True)
-
 def all_check(check=1):
     for var in check_var:
         var.set(check)
 
+
 def check_by_entry(check=1):
-    entrada = et_select.get()
+    entrada = entrada_marcar_desde.get()
     elementos = entrada.split(",")
     elementos = [item for item in elementos if item != ""]
     if len(elementos) == 0:
-        messagebox.showwarning('Sin datos','Indique numero o rango')
+        messagebox.showwarning('Indique numero o rango')
         return
     
     for elem in elementos:
@@ -139,57 +101,6 @@ def all_checkpoint():
         tg_allcheck.config(relief="raised")  # Cambia el efecto visual B
         checkpoint.set(0)
         all_check(0)
-
-def ignore_view():
-    entrada = et_ignore.get()
-    elementos = entrada.split(",")
-    elementos = [item for item in elementos if item != ""]
-    if len(elementos) == 0:
-        messagebox.showwarning('Sin datos','Indique numero o rango')
-        return
-    if len(show_var) == 0:
-        messagebox.showwarning('Archivo','Seleccione un archivo')
-        return
-    all_show()
-    for elem in elementos:
-        if "-" in elem:
-            inicio, fin = map(int, elem.split("-"))
-            if inicio < 1:
-                messagebox.showwarning('Fuera de indice','Indique minimo 1')
-                return
-            for i in range(inicio, fin + 1):
-                show_var[i-1].set(False)
-        else:
-            index = int(elem)
-            show_var[index - 1].set(False)
-    render(True)
-
-def save_session_linefile():
-    # Obtiene los valores de los Entry y los almacena en un diccionario
-    datos = {
-        "source" : ruta_archivo.get(),
-        "target" : et_target.get(),
-        "select" : et_select.get(),
-        "ignore" : et_ignore.get()
-    }
-    if ruta_archivo.get() == "":
-        messagebox.showwarning('Sin archivo','Indique un archivo')
-        return
-    file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("json", "*_lf.json")])
-    if file_path:
-        # Guarda los datos en un archivo JSON
-        with open(file_path, "w") as file:
-            json.dump(datos, file)
-
-def open_session_linefile():
-    pathfile = filedialog.askopenfilename(filetypes=[("Archivos JSON", "*_lf.json")])
-    if pathfile:
-        with open(pathfile, 'r') as file:
-            datos = json.load(file)
-            ruta_archivo.set(datos['source'])
-            et_target.insert(0,datos['target'])
-            et_select.insert(0,datos['select'])
-            et_ignore.insert(0,datos['ignore'])
 
 root = tk.Tk()
 root.title("ManageLineFile")
@@ -219,9 +130,7 @@ check_buttons = []
 num_entries = []
 text_entries = []
 checkpoint = tk.IntVar()  # Variable de control para el estado del toogle
-list_wf_lineacode = []
-show_var = []
-#lineas = []
+lineas = []
 
 
 # Funciones
@@ -240,8 +149,8 @@ menu = tk.Menu(root)
 root.config(menu=menu)
 top_menu = tk.Menu(menu)
 menu.add_cascade(label="Inicio", menu=top_menu)
-top_menu.add_command(label="Abrir Sesion", command=open_session_linefile)
-top_menu.add_command(label="Guardar Sesion", command=save_session_linefile)
+top_menu.add_command(label="Abrir Sesion", command=about)
+top_menu.add_command(label="Guardar Sesion", command=about)
 top_menu.add_separator()
 top_menu.add_command(label="Abrir Archivo", command=seleccionar_archivo)
 top_menu.add_command(label="Desde Referencia", command=about)
@@ -249,7 +158,7 @@ top_menu.add_separator()
 top_menu.add_command(label="Salir", command=root.quit)
 file_menu = tk.Menu(menu)
 menu.add_cascade(label="Archivo", menu=file_menu)
-file_menu.add_command(label="Ver archivo fuente", command=lambda: visorfileln.show(root,ruta_archivo.get()))
+file_menu.add_command(label="Ver archivo fuente", command=about)
 file_menu.add_command(label="Seleccionar archivo destino", command=select_target)
 
 # Frame
@@ -266,12 +175,10 @@ notebook = ttk.Notebook(top_pane_info, style="lefttab.TNotebook")
 # Crear contenido para algunas pestañas
 frm_file = ttk.Frame(notebook)
 frm_sele = ttk.Frame(notebook)
-frm_view = ttk.Frame(notebook)
 
 # Agregar pestañas al Notebook con su respectivo contenido
-notebook.add(frm_file, text="    Archivo")
-notebook.add(frm_sele, text="  Seleccion")
-notebook.add(frm_view, text="Perspectiva")
+notebook.add(frm_file, text="Archivo")
+notebook.add(frm_sele, text="Seleccion")
 notebook.pack(fill=tk.X)
 
 
@@ -289,14 +196,11 @@ lbl_r.grid(row=1, column=0)
 et_target = tk.Entry(frm_file)
 et_target.grid(row=1, column=1,columnspan=2, sticky="ew")
 
-btn_update_source = tk.Button(frm_file, text="Actualizar desde Fuente", command=lambda: open_load_file(ruta_archivo.get()))
-btn_update_source.grid(row=2, column=0,columnspan=3)
-
 lbl_r = tk.Label(frm_sele, text="Escriba numero o intervalo de lineas: 1,2-5,7")
 lbl_r.grid(row=0, column=0, columnspan=3)
 
-et_select = tk.Entry(frm_sele)
-et_select.grid(row=1, column=0, columnspan=3, sticky="ew")
+entrada_marcar_desde = tk.Entry(frm_sele)
+entrada_marcar_desde.grid(row=1, column=0, columnspan=3, sticky="ew")
 
 checking_entry = tk.Button(frm_sele, text="Marcar", command=lambda: check_by_entry(1))
 checking_entry.grid(row=2, column=0)
@@ -308,18 +212,6 @@ unckecking_entry.grid(row=2, column=1)
 
 tg_allcheck = tk.Button(frm_sele, text="Todo", command=all_checkpoint)
 tg_allcheck.grid(row=2, column=2)
-
-lbl_c = tk.Label(frm_view, text="Escriba numero o intervalo de lineas: 1,2-5,7")
-lbl_c.grid(row=0, column=0, columnspan=3)
-
-et_ignore = tk.Entry(frm_view)
-et_ignore.grid(row=1, column=0, columnspan=2, sticky="ew")
-
-lines_ignore = tk.Button(frm_view, text="Ocultar", command=ignore_view)
-lines_ignore.grid(row=2, column=0)
-
-lines_show = tk.Button(frm_view, text="Recargar", command=render)
-lines_show.grid(row=2, column=1)
 
 top_pane_action = tk.Frame(frame_top, bg="yellow")
 top_pane_action.pack(side="top", fill="x")

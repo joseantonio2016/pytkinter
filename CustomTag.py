@@ -16,7 +16,7 @@ class CustomTag(tk.Text):
         self.master = master
         
         # sample tag
-        self.tag_config("match", foreground="red")
+        self.tag_config("match", foreground="#007FFF")
 
     def highlight(self, tag, start, end):
         self.tag_add(tag, start, end)

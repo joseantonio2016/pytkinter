@@ -3,13 +3,33 @@ from tkinter import ttk
 from tkinter import filedialog,messagebox
 import json
 from tkinter import font
+import visorfileln
+from CustomTag import CustomTag
+import os
 
 def add_wgroup_file(t_file='',t_ini='',t_fin=''):
-    """ def reemplazar_contenido(valor_archivo, linea_inicio, linea_fin):
-        # Aquí puedes utilizar los valores capturados para reemplazar contenido en el archivo
-        print(f"Archivo: {valor_archivo}")
-        print(f"Línea inicio: {linea_inicio}")
-        print(f"Línea fin: {linea_fin}") """
+    
+    def highlight_text(args=[]):
+        text_widget.highlight_pattern(r"\b(function|return|class|as)\b","dev")
+        text_widget.highlight_pattern(r"\b(if|else|for|in|async|await|yield)\b","dev2")
+        text_widget.highlight_pattern(r"get|set|id|value|query|object|request|client|array|log\(","wc")
+        if extf != '.py':
+            text_widget.highlight_pattern(r"\b(const|var|let|new|extends|namespace|public|private|protected|using|void)\b","dev-nopy")
+            text_widget.highlight_pattern(r"document|this|static","w-nopy")
+        else:
+            text_widget.highlight_pattern(r"\b(def|from)\b","dev-py")
+
+        if extf == '.php':
+            text_widget.highlight_pattern(r"\b(use|include)\b","dev-php")
+        else:
+            text_widget.highlight_pattern(r"\b(import|export)\b","dev-nophp")
+
+        text_widget.highlight_pattern(r"[=,\.\?:\+><\*$-]", "assign")
+        text_widget.highlight_pattern(r"[\[\](){}]", "group")
+        text_widget.highlight_pattern(r"(?<![\\])['\"](.*?)(?<![\\])['\"]", "string")
+        text_widget.highlight_pattern(r"(#|\/\/)(.*)", "lcomment")
+        text_widget.highlight_pattern(r"/\*[\s\S]*?\*/", "bcomment")
+        #text_widget.highlight_pattern(r"(?:'|\")(.*?[^\\])(?:'|\")", "string")
     
     def reemplazar_contenido(pathfile, l_ini, l_fin, text_widget):
         try:
@@ -53,6 +73,7 @@ def add_wgroup_file(t_file='',t_ini='',t_fin=''):
                 textof = ''.join(lineas_a_mostrar)
                 text_widget.delete(1.0, tk.END)
                 text_widget.insert(tk.END, textof)
+                highlight_text()
         except UnicodeDecodeError as e:
             txt = f"Error al decodificar el archivo: {e}"
             m_showInfo(txt,"Seleccione un archivo plano")
@@ -87,15 +108,17 @@ def add_wgroup_file(t_file='',t_ini='',t_fin=''):
     mando1 = tk.Frame(conjunto)
     mando1.pack(padx=5, pady=5, fill='x')
 
-    btn_seleccionar_archivo = ttk.Button(mando1, text="Abrir", command=seleccionar_archivo,style='estiloBoton.TButton')
-    btn_seleccionar_archivo.pack(side='left', padx=5)
-
-    lb_filename = tk.Label(mando1, text='Archivo')
-    lb_filename.pack(side='left', padx=5)
+    lb_filename = tk.Label(mando1, text='Archivo:')
+    lb_filename.pack(side='left', padx=1)
 
     entry_archivo = ttk.Entry(mando1, width=30)
     entry_archivo.pack(side='left', padx=5)
     entry_archivo.insert(0, t_file)
+    namefile, extf = os.path.splitext(t_file)
+
+
+    btn_seleccionar_archivo = ttk.Button(mando1, text="Ver", command=lambda path=entry_archivo: visorfileln.show(root,path.get()),style='estiloBoton.TButton')
+    btn_seleccionar_archivo.pack(side='left', padx=5)
 
     btn_eliminar = ttk.Button(mando1, text="Eliminar", style='estiloBoton.TButton')
     btn_eliminar.pack(side='right', padx=5)
@@ -127,7 +150,7 @@ def add_wgroup_file(t_file='',t_ini='',t_fin=''):
     btn_agregar.pack(side='left', padx=5)
     btn_agregar.config(command=lambda archivo=entry_archivo, inicio=entry_linea_inicio, fin=entry_linea_fin: agregar_contenido(archivo.get(), inicio.get(), fin.get()))
 
-    text_widget = tk.Text(conjunto, height=12, width=50, wrap="none")
+    text_widget = CustomTag(conjunto, height=12, width=50, wrap="none", bg="gray20", fg="white", font=("Courier", 9))
     text_widget.pack(expand=True, padx=5, pady=5, fill="both")  # Efecto visual del Text en la parte inferior
     # Barra de desplazamiento horizontal
     scrollbar_x = tk.Scrollbar(conjunto, orient="horizontal", command=scroll_x)
@@ -135,6 +158,21 @@ def add_wgroup_file(t_file='',t_ini='',t_fin=''):
 
     # Vincular la barra de desplazamiento al widget Text
     text_widget.config(xscrollcommand=scrollbar_x.set, spacing1=2)
+    text_widget.tag_config("dev", foreground="#007FFF")
+    text_widget.tag_config("dev2", foreground="mediumorchid3")
+    text_widget.tag_config("dev-nopy", foreground="#007FFF")
+    text_widget.tag_config("wc", foreground="navajowhite3")
+    text_widget.tag_config("w-nopy", foreground="navajowhite3")
+    text_widget.tag_config("dev-py", foreground="#007FFF")
+    text_widget.tag_config("dev-php", foreground="#007FFF")
+    text_widget.tag_config("dev-nophp", foreground="#007FFF")
+    text_widget.tag_config("assign", foreground="coral")
+    text_widget.tag_config("group", foreground="darkgoldenrod1")
+    text_widget.tag_config("lcomment", foreground="antiquewhite4")
+    text_widget.tag_config("bcomment", foreground="antiquewhite4")
+    text_widget.tag_config("string", foreground="seagreen4")
+
+    text_widget.bind("<KeyRelease>", highlight_text)
     # Agrega las referencias a la lista de Entry
     lista_entry.append((entry_archivo,entry_linea_inicio,entry_linea_fin))
 
@@ -163,12 +201,27 @@ def save_crossref(lista_entry):
             json.dump(data, file)
 
 def open_crossref():
-    ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos JSON", "*.json")])
+    ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos JSON", "*_cr.json")])
     if ruta_archivo:
         with open(ruta_archivo, 'r') as file:
             datos = json.load(file)
             for obj in datos:
-                add_wgroup_file(obj['file'],obj['ini'],obj['end'])
+                try:
+                    add_wgroup_file(obj['file'],obj['ini'],obj['end'])
+                except:
+                    messagebox.showwarning(
+        "Error de clave", "No tiene el formato json esperado."
+    )
+
+def open_file():
+    pathfile = filedialog.askopenfilename(filetypes=[("Archivos", "*.*")])
+    if pathfile:
+        add_wgroup_file(pathfile)
+
+def view_file():
+    pathfile = filedialog.askopenfilename(filetypes=[("Archivos", "*.*")])
+    if pathfile:
+        visorfileln.show(root,pathfile)
 
 def on_configure(event):
     # Actualiza el área desplegable del lienzo cuando el marco cambia de tamaño
@@ -193,22 +246,24 @@ cambiar_fuente_botones()
 # Lista para almacenar las referencias a los Entry creados dinámicamente
 lista_entry = []
 
-home_bar = ttk.Frame(root)
-home_bar.pack(padx=10, pady=10, fill='x')
-#home_bar.option_add("*Font", nueva_fuente)
+def about():
+    messagebox.showinfo(
+        "About", "Este es un programa para referenciar archivos."
+    )
 
-
-lbl_r = tk.Label(home_bar, text="Referencia cruzada:")
-lbl_r.pack(side='left', padx=5)
-
-boton_seleccionar = ttk.Button(home_bar, text="Abrir", command=open_crossref, style='estiloBoton.TButton')
-boton_seleccionar.pack(side='left', padx=5)
-
-btn_save_files = ttk.Button(home_bar, text="Guardar", command=lambda: save_crossref(lista_entry), style='estiloBoton.TButton')
-btn_save_files.pack(side='left', padx=5)
-
-btn_agregar_conjunto = ttk.Button(home_bar, text="Agregar Referencia", command=add_wgroup_file, style='estiloBoton.TButton')
-btn_agregar_conjunto.pack(side='left', padx=5)
+# Menu
+menu = tk.Menu(root)
+root.config(menu=menu)
+ini_menu = tk.Menu(menu)
+menu.add_cascade(label="Referencia", menu=ini_menu)
+ini_menu.add_command(label="Abrir", command=open_crossref)
+ini_menu.add_command(label="Guardar", command=lambda: save_crossref(lista_entry))
+ini_menu.add_separator()
+ini_menu.add_command(label="Salir", command=root.quit)
+file_menu = tk.Menu(menu)
+menu.add_cascade(label="Archivo", menu=file_menu)
+file_menu.add_command(label="Agregar", command=open_file)
+file_menu.add_command(label="Contenido", command=view_file)
 
 # Crear un lienzo (canvas) con barras de desplazamiento
 canvas = tk.Canvas(root)

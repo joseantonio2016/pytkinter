@@ -23,11 +23,11 @@ def show_file_content():
         scrollbar = tk.Scrollbar(text_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        line_numbers = tk.Text(text_frame, width=4, padx=2,borderwidth=0, background='light gray',yscrollcommand=scrollbar.set)
+        line_numbers.pack(side=tk.LEFT, fill=tk.Y)
+
         text_widget = tk.Text(text_frame, wrap="none", yscrollcommand=scrollbar.set)
         text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        line_numbers = tk.Text(text_frame, width=4, padx=2, borderwidth=0, background='light gray',yscrollcommand=scrollbar.set)
-        line_numbers.pack(side=tk.LEFT, fill=tk.Y)
 
         scrollbar.config(command=on_scroll)
 
